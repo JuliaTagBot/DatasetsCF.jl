@@ -18,19 +18,13 @@ end
 Return MovieLens 100k dataset.
 """
 function MovieLens()::Persa.TimeCFDataset
-  file = "$(defdir)/ml-100k/u.data"
+  filename = "$(defdir)/ml-100k/u.data"
 
-  isfile(file) || getmovielensdata(defdir)
+  isfile(filename) || getmovielensdata(defdir)
 
-  file = readtable(file, separator = ' ', header = false)
-
-  df = DataFrame()
-
-  df[:user] = file[:,1]
-  df[:item] = file[:,2]
-  df[:rating] = file[:,3]
-  df[:timestamp] = file[:,4]
-
+  df = CSV.read(filename, delim = '	',
+                            header = [:user, :item, :rating, :timestamp],
+                            nullable = false)
   return Persa.Dataset(df)
 end
 
@@ -40,18 +34,21 @@ end
 Return MovieLens 1M dataset.
 """
 function MovieLens1M()::Persa.TimeCFDataset
-  file = "$(defdir)/ml-1m/ratings.dat"
+  filename = "$(defdir)/ml-1m/ratings.dat"
 
-  isfile(file) || getmovielensdata1m(defdir)
+  isfile(filename) || getmovielensdata1m(defdir)
 
-  file = readtable(file, separator = ':', header = false)
+  file = CSV.read(filename, delim = ':',
+                            header = [:user, :trash1, :item, :trash2, :rating, :trash3, :timestamp],
+                            nullable = true)
 
   df = DataFrame()
 
-  df[:user] = file[:,1]
-  df[:item] = labelencode(labelmap(file[:,3]), file[:,3])
-  df[:rating] = file[:,5]
-  df[:timestamp] = file[:,7]
+  df[:user] = convert(Array{Int}, file[:user])
+  df[:item] = convert(Array{Int}, file[:item])
+  df[:item] = labelencode(labelmap(df[:item]), df[:item])
+  df[:rating] = convert(Array{Int}, file[:rating])
+  df[:timestamp] = convert(Array{Int}, file[:timestamp])
 
   return Persa.Dataset(df)
 end
